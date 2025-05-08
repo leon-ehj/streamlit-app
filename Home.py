@@ -4,10 +4,6 @@ import altair as alt
 
 st.set_page_config(page_title="Patient Dashboard", layout="wide")
 
-st.sidebar.title("Navigation")
-st.sidebar.page_link("Home.py", label="🏠 Home")
-st.sidebar.page_link("Hospitals.py", label="🏥 Hospitals")
-
 # Load the CSV file
 @st.cache_data
 def load_data():
@@ -15,7 +11,7 @@ def load_data():
 
 df = load_data()
 
-# Convert length_of_stay, age, lace_score, cci_score to numeric (if not already)
+# Convert to numeric
 df["length_of_stay"] = pd.to_numeric(df["length_of_stay"], errors="coerce")
 df["age"] = pd.to_numeric(df["age"], errors="coerce")
 df["lace_score"] = pd.to_numeric(df["lace_score"], errors="coerce")
@@ -24,7 +20,7 @@ df["cci_score"] = pd.to_numeric(df["cci_score"], errors="coerce")
 # Dashboard title
 st.title("🏥 Patient Overview Dashboard")
 
-# Display basic metrics
+# basic metrics
 col1, col2, col3 = st.columns(3)
 with col1:
     st.metric("Total Patients", df["patient_id"].nunique())
