@@ -41,7 +41,8 @@ with col6:
 def create_bar_chart(group_column, title, bin=False, custom_bins=None):
     if bin and custom_bins:
         df_grouped = df.copy()
-        df_grouped[group_column] = pd.cut(df_group_column[group_column], bins=custom_bins, right=False)
+        # Fix the typo: change df_group_column to df_grouped
+        df_grouped[group_column] = pd.cut(df_grouped[group_column], bins=custom_bins, right=False)
         df_grouped[group_column] = df_grouped[group_column].apply(lambda x: f"{int(x.left)}–{int(x.right - 1)}")
         group_counts = df_grouped.groupby(group_column, observed=False)["patient_id"].nunique().reset_index()
     else:
