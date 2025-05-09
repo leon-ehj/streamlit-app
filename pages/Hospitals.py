@@ -24,7 +24,7 @@ st.title("🏥 Hospital Overview Dashboard")
 hospital_list = df["Hospital"].dropna().unique()
 selected_hospital = st.selectbox("🏥 Select a Hospital", sorted(hospital_list))
 
-# Filter the data for the selected hospital (for metrics only)
+# Filter the data for the selected hospital
 df_hospital = df[df["Hospital"] == selected_hospital]
 
 # Basic metrics for the selected hospital
@@ -87,7 +87,7 @@ los_bins = list(range(0, 51, 5))        # 0–4, 5–9, ..., 45–49
 cci_bins = list(range(0, 21, 2))        # 0–1, 2–3, ..., 18–19
 lace_bins = list(range(0, 21, 2))       # 0–1, 2–3, ..., 18–19
 
-# Create the charts using the selected hospital's data for all but the last chart
+# Create charts using the selected hospital's data for all but the last chart
 age_chart = create_bar_chart('age', 'Age', bin=True, custom_bins=age_bins, df_to_use=df_hospital)
 gender_chart = create_bar_chart('gender', 'Gender', df_to_use=df_hospital)
 race_chart = create_bar_chart('race', 'Race', df_to_use=df_hospital)
