@@ -41,7 +41,7 @@ with col6:
 def create_bar_chart(group_column, title, bin=False, custom_bins=None):
     if bin and custom_bins:
         df_grouped = df.copy()
-        df_grouped[group_column] = pd.cut(df_group_column[group_column], bins=custom_bins, right=False)
+        df_grouped[group_column] = pd.cut(df_grouped[group_column], bins=custom_bins, right=False)
         df_grouped[group_column] = df_grouped[group_column].apply(lambda x: f"{int(x.left)}–{int(x.right - 1)}")
         group_counts = df_grouped.groupby(group_column, observed=False)["patient_id"].nunique().reset_index()
     else:
@@ -74,30 +74,29 @@ def create_bar_chart(group_column, title, bin=False, custom_bins=None):
 
     return chart
 
-# Function to create a pie chart (gender)
-def create_pie_chart(df, column, title, color_scale):
-    counts = df[column].value_counts().reset_index()
-    counts.columns = [column, 'Count']
+# Function to create a pie chart
+def create_pie_chart(group_column, title):
+    group_counts = df[group_column].value_counts().reset_index()
+    group_counts.columns = [group_column, "Count"]
 
-    chart = alt.Chart(counts).mark_arc(innerRadius=50).encode(
+    chart = alt.Chart(group_counts).mark_arc(innerRadius=50).encode(
         theta=alt.Theta(field="Count", type="quantitative"),
         color=alt.Color(
-            f"{column}:N",
-            scale=alt.Scale(domain=color_scale.keys(), range=color_scale.values()),
+            f"{group_column}:N",
             legend=alt.Legend(title=title)
         ),
-        tooltip=[f"{column}:N", "Count:Q"]
+        tooltip=[f"{group_column}:N", "Count:Q"]
     ).properties(
         width=350,
         height=350,
-        title=f"🍰 {title}"
+        title=f"🍰 Patients by {title}"
     ).configure_title(
         fontSize=18,
         anchor='middle',
         font='Helvetica',
         color='#333'
     )
-    
+
     return chart
 
 # Define custom bins
@@ -106,16 +105,9 @@ los_bins = list(range(0, 51, 5))        # 0–4, 5–9, ..., 45–49
 cci_bins = list(range(0, 21, 2))        # 0–1, 2–3, ..., 18–19
 lace_bins = list(range(0, 21, 2))       # 0–1, 2–3, ..., 18–19
 
-# Check if 'gender' column contains valid data
-if df['gender'].isnull().sum() == 0 and df['gender'].nunique() > 0:
-    # Create the gender pie chart with specific color scale
-    gender_chart = create_pie_chart(df, "gender", "Patients by Gender", {"Female": "#FF69B4", "Male": "#1E90FF"})
-else:
-    gender_chart = None
-    st.warning("No valid 'gender' data available for the pie chart.")
-
-# Create the other charts
+# Create the charts
 age_chart = create_bar_chart('age', 'Age', bin=True, custom_bins=age_bins)
+gender_chart = create_pie_chart('gender', 'Gender')
 race_chart = create_bar_chart('race', 'Race')
 admission_type_chart = create_bar_chart('admission_type', 'Admission Type')
 admission_location_chart = create_bar_chart('admission_location', 'Admission Location')
@@ -129,8 +121,7 @@ hospital_chart = create_bar_chart('Hospital', 'Hospital')
 st.markdown("### 🧬 Demographics")
 col1, col2 = st.columns(2)
 col1.altair_chart(age_chart, use_container_width=True)
-if gender_chart:
-    col2.altair_chart(gender_chart, use_container_width=True)
+col2.altair_chart(gender_chart, use_container_width=True)
 
 st.altair_chart(race_chart, use_container_width=True)
 
