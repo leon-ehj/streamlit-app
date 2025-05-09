@@ -23,16 +23,40 @@ st.subheader("🔍 Search and Filters")
 # Input field to search by patient ID
 search_id = st.text_input("Search by Patient ID")
 
-# ---- Apply Filters ----
+# Calculate averages for filtering
+avg_lace_score = df["lace_score"].mean()
+avg_cci_score = df["cci_score"].mean()
+avg_length_of_stay = df["length_of_stay"].mean()
+
+# Filters for high scores
+high_lace_filter = st.checkbox(f"Filter by High LACE Score (> {avg_lace_score:.2f})", value=True)
+high_cci_filter = st.checkbox(f"Filter by High CCI Score (> {avg_cci_score:.2f})", value=True)
+high_los_filter = st.checkbox(f"Filter by High Length of Stay (> {avg_length_of_stay:.2f} days)", value=True)
+
+# Apply Filters
 filtered_df = df.copy()
 
 # Filter by patient ID if a search term is provided
 if search_id:
     filtered_df = filtered_df[filtered_df["patient_id"].astype(str).str.contains(search_id)]
 
+# Filter by high LACE score
+if high_lace_filter:
+    filtered_df = filtered_df[filtered_df["lace_score"] > avg_lace_score]
+
+# Filter by high CCI score
+if high_cci_filter:
+    filtered_df = filtered_df[filtered_df["cci_score"] > avg_cci_score]
+
+# Filter by high LOS
+if high_los_filter:
+    filtered_df = filtered_df[filtered_df["length_of_stay"] > avg_length_of_stay]
+
 # Display filtered patient data
-if search_id:
+if not filtered_df.empty:
     st.subheader("🔎 Filtered Patients")
+    
+    # Select the relevant columns
     filtered_table = filtered_df[[
         "patient_id", "age", "gender", "length_of_stay",
         "diagnosis_description", "cci_score", "lace_score"
@@ -44,13 +68,8 @@ if search_id:
         "Diagnosis", "CCI Score", "LACE Score"
     ]
 
-    # Generate the table with clickable Patient IDs as markdown links
-    for i, row in filtered_table.iterrows():
-        patient_id = row["Patient ID"]
-        patient_link = f"[{patient_id}](./PatientDetails.py?patient_id={patient_id})"
-        filtered_table.at[i, "Patient ID"] = patient_link
-
-    # Render the table row by row as markdown
-    for _, row in filtered_table.iterrows():
-        row_markdown = " | ".join([f"{col}: {row[col]}" for col in filtered_table.columns])
-        st.markdown(row_markdown)
+    # Display the filtered table
+    st.dataframe(filtered_table)  # This will display the table in the UI
+    
+else:
+    st.write("No patients found with the selected filters.")
