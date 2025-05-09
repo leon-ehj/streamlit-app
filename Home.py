@@ -41,7 +41,7 @@ with col6:
 def create_bar_chart(group_column, title, bin=False, custom_bins=None):
     if bin and custom_bins:
         df_grouped = df.copy()
-        df_grouped[group_column] = pd.cut(df_grouped[group_column], bins=custom_bins, right=False)
+        df_grouped[group_column] = pd.cut(group_column[group_column], bins=custom_bins, right=False)
         df_grouped[group_column] = df_grouped[group_column].apply(lambda x: f"{int(x.left)}–{int(x.right - 1)}")
         group_counts = df_grouped.groupby(group_column, observed=False)["patient_id"].nunique().reset_index()
     else:
@@ -74,44 +74,40 @@ def create_bar_chart(group_column, title, bin=False, custom_bins=None):
 
     return chart
 
-# Define custom bins
+# Define custom bins for the charts
 age_bins = list(range(0, 101, 10))      # 0–9, 10–19, ..., 90–99
 los_bins = list(range(0, 51, 5))        # 0–4, 5–9, ..., 45–49
 cci_bins = list(range(0, 21, 2))        # 0–1, 2–3, ..., 18–19
 lace_bins = list(range(0, 21, 2))       # 0–1, 2–3, ..., 18–19
 
-# Check gender column for unique values and missing data
-st.write("Unique Gender Values:", df['gender'].unique())
-st.write("Missing Gender Data:", df['gender'].isnull().sum())
+# Check if 'gender' column contains valid data
+if df['gender'].isnull().sum() == 0 and df['gender'].nunique() > 0:
+    # Create the gender pie chart
+    df_gender = df['gender'].dropna()  # Remove NaN values
+    gender_counts = df_gender.value_counts().reset_index()
+    gender_counts.columns = ["Gender", "Count"]
 
-# Filter out missing gender values
-df_gender = df['gender'].dropna()  
-gender_counts = df_gender.value_counts().reset_index()
-gender_counts.columns = ["Gender", "Count"]
-
-# Display gender data for debugging
-st.write(gender_counts)
-
-# Create the gender pie chart
-gender_chart = alt.Chart(gender_counts).mark_arc(innerRadius=50).encode(
-    theta=alt.Theta(field="Count", type="quantitative"),
-    color=alt.Color(
-        "Gender:N",
-        scale=alt.Scale(domain=["Female", "Male"], range=["#FF69B4", "#1E90FF"]),
-        legend=alt.Legend(title="Gender")
-    ),
-    tooltip=["Gender:N", "Count:Q"]
-).properties(
-    width=350,
-    height=350,
-    title="🍰 Patients by Gender"
-).configure_title(
-    fontSize=18,
-    anchor='middle',
-    font='Helvetica',
-    color='#333'
-)
-
+    gender_chart = alt.Chart(gender_counts).mark_arc(innerRadius=50).encode(
+        theta=alt.Theta(field="Count", type="quantitative"),
+        color=alt.Color(
+            "Gender:N",
+            scale=alt.Scale(domain=["Female", "Male"], range=["#FF69B4", "#1E90FF"]),
+            legend=alt.Legend(title="Gender")
+        ),
+        tooltip=["Gender:N", "Count:Q"]
+    ).properties(
+        width=350,
+        height=350,
+        title="🍰 Patients by Gender"
+    ).configure_title(
+        fontSize=18,
+        anchor='middle',
+        font='Helvetica',
+        color='#333'
+    )
+else:
+    gender_chart = None
+    st.warning("No valid 'gender' data available for the pie chart.")
 
 # Create the other charts
 age_chart = create_bar_chart('age', 'Age', bin=True, custom_bins=age_bins)
