@@ -4,23 +4,143 @@ import altair as alt
 
 st.set_page_config(page_title="Patient Dashboard", layout="wide")
 
-# Load the CSV file
 @st.cache_data
 def load_data():
     return pd.read_csv("data.csv")
 
 df = load_data()
 
-# Convert to numeric
-df["length_of_stay"] = pd.to_numeric(df["length_of_stay"], errors="coerce")
-df["age"] = pd.to_numeric(df["age"], errors="coerce")
-df["lace_score"] = pd.to_numeric(df["lace_score"], errors="coerce")
-df["cci_score"] = pd.to_numeric(df["cci_score"], errors="coerce")
+race_grouped = {
+    'White': [
+        'WHITE', 
+        'WHITE - OTHER EUROPEAN', 
+        'WHITE - RUSSIAN', 
+        'WHITE - BRAZILIAN', 
+        'WHITE - EASTERN EUROPEAN'
+    ],
+    'Black': [
+        'BLACK/AFRICAN AMERICAN', 
+        'BLACK/CARIBBEAN ISLAND', 
+        'BLACK/AFRICAN', 
+        'BLACK/CAPE VERDEAN'
+    ],
+    'Hispanic/Latino': [
+        'HISPANIC/LATINO - PUERTO RICAN', 
+        'HISPANIC/LATINO - HONDURAN', 
+        'HISPANIC/LATINO - DOMINICAN', 
+        'HISPANIC/LATINO - MEXICAN', 
+        'HISPANIC/LATINO - SALVADORAN', 
+        'HISPANIC/LATINO - GUATEMALAN', 
+        'HISPANIC/LATINO - COLUMBIAN', 
+        'HISPANIC/LATINO - CUBAN', 
+        'HISPANIC/LATINO - CENTRAL AMERICAN', 
+        'HISPANIC OR LATINO'
+    ],
+    'Asian': [
+        'ASIAN - SOUTH EAST ASIAN', 
+        'ASIAN', 
+        'ASIAN - CHINESE', 
+        'ASIAN - KOREAN', 
+        'ASIAN - ASIAN INDIAN'
+    ],
+    'Other': [
+        'OTHER', 
+        'UNKNOWN', 
+        'UNABLE TO OBTAIN', 
+        'PATIENT DECLINED TO ANSWER', 
+        'SOUTH AMERICAN', 
+        'PORTUGUESE',
+        'NATIVE HAWAIIAN OR OTHER PACIFIC ISLANDER',
+        'AMERICAN INDIAN/ALASKA NATIVE'
+    ]
+}
 
-# Dashboard title
-st.title("🏥 Patient Overview Dashboard")
+def group_races(race_value):
+    for category, races in race_grouped.items():
+        if race_value in races:
+            return category
+    return 'Other/Unknown'
+df['race_category'] = df['race'].apply(group_races)
 
-# Basic metrics
+def create_bar(group_column, title, bar_size=20):
+    group_counts = df.groupby(group_column)["patient_id"].nunique().reset_index()
+    group_counts.columns = [group_column, "Patient Count"]
+    group_counts = group_counts.sort_values(by=group_column, ascending=True)
+    
+    chart = alt.Chart(group_counts).mark_bar(size=bar_size, color="#4C78A8").encode(
+        x=alt.X(f"{group_column}:N", title=title, sort='ascending', axis=alt.Axis(labelAngle=0)),
+        y=alt.Y("Patient Count:Q", title="Patients"),
+        tooltip=[f"{group_column}:N", "Patient Count:Q"]
+    ).properties(
+        height=425,
+        width=350,
+        title=f"Patients by {title}"
+    ).configure_view(
+        stroke=None
+    ).configure_axis(
+        grid=False,
+        labelFontSize=12,
+        titleFontSize=14,
+        labelColor="#555",
+        titleColor="#222"
+    ).configure_title(
+        fontSize=18,
+        anchor='start',
+        font='Helvetica',
+        color='#333'
+    )
+    return chart
+
+def create_pie(group_column, title):
+    group_counts = df[group_column].value_counts().reset_index()
+    group_counts.columns = [group_column, "Count"]
+
+    chart = alt.Chart(group_counts).mark_arc(innerRadius=50).encode(
+        theta=alt.Theta(field="Count", type="quantitative"),
+        color=alt.Color(
+        f"{group_column}:N",
+        legend=alt.Legend(title=title)
+    ),
+        tooltip=[f"{group_column}:N", "Count:Q"]
+    ).properties(
+        width=350,
+        height=350,
+        title=f"Patients by {title}"
+    ).configure_title(
+        fontSize=18,
+        anchor='middle',
+        font='Helvetica',
+        color='#333'
+    )
+
+    return chart
+
+age_histogram = alt.Chart(df).mark_bar(color="#4C78A8").encode(
+    alt.X("age:Q", bin=alt.Bin(maxbins=20), title="Age"),
+    alt.Y("count():Q", title="Number of Patients"),
+    tooltip=["age:Q", "count():Q"]
+).properties(
+    height=400,
+    width=350,
+    title="Age Distribution of Patients"
+).configure_view(
+    stroke=None
+).configure_axis(
+    grid=False,
+    labelFontSize=12,
+    titleFontSize=14,
+    labelColor="#555",
+    titleColor="#222"
+).configure_title(
+    fontSize=18,
+    anchor='start',
+    font='Helvetica',
+    color='#333'
+)
+
+# title
+st.title("Patient Overview Dashboard")
+# metrics
 col1, col2, col3 = st.columns(3)
 with col1:
     st.metric("Total Patients", df["patient_id"].nunique())
@@ -37,107 +157,55 @@ with col5:
 with col6:
     st.metric("Average CCI Score", f"{df['cci_score'].mean():.2f}")
 
-# Function to create a bar chart
-def create_bar_chart(group_column, title, bin=False, custom_bins=None):
-    if bin and custom_bins:
-        df_grouped = df.copy()
-        # Fix the typo: change df_group_column to df_grouped
-        df_grouped[group_column] = pd.cut(df_grouped[group_column], bins=custom_bins, right=False)
-        df_grouped[group_column] = df_grouped[group_column].apply(lambda x: f"{int(x.left)}–{int(x.right - 1)}")
-        group_counts = df_grouped.groupby(group_column, observed=False)["patient_id"].nunique().reset_index()
-    else:
-        group_counts = df.groupby(group_column)["patient_id"].nunique().reset_index()
+# creating charts
+gender_chart = create_pie('gender', 'Gender')
+race_pie_chart = create_pie('race_category', 'Race')
+admission_type_chart = create_bar('admission_type', 'Admission Type', bar_size=30)
+admission_location_chart = create_bar('admission_location', 'Admission Location', bar_size=25)
+discharge_location_chart = create_bar('discharge_location', 'Discharge Location')
+length_of_stay_chart = create_bar('length_of_stay', 'Length of Stay', bar_size=7)
+cci_score_chart = create_bar('cci_score', 'CCI Score', bar_size=35)
+lace_score_chart = create_bar('lace_score', 'LACE Score', bar_size=30)
+hospital_chart = create_bar('Hospital', 'Hospital', bar_size=25)
 
-    group_counts.columns = [group_column, "Patient Count"]
-    group_counts = group_counts[group_counts["Patient Count"] > 0]
+# flip axes
+admission_type_chart = admission_type_chart.encode(
+    x=alt.X("Patient Count:Q", title="Patients"),
+    y=alt.Y('admission_type:N', title='Admission Type',sort='-x',axis=alt.Axis(labelLimit=200))
+)
 
-    chart = alt.Chart(group_counts).mark_bar(size=15, color="#4C78A8").encode(
-        x=alt.X(f"{group_column}:N", title=title, sort='-y', axis=alt.Axis(labelAngle=-45)),
-        y=alt.Y("Patient Count:Q", title="Patients"),
-        tooltip=[f"{group_column}:N", "Patient Count:Q"]
-    ).properties(
-        height=300,
-        title=f"👥 Patients by {title}"
-    ).configure_view(
-        stroke=None
-    ).configure_axis(
-        grid=False,
-        labelFontSize=12,
-        titleFontSize=14,
-        labelColor="#555",
-        titleColor="#222"
-    ).configure_title(
-        fontSize=18,
-        anchor='start',
-        font='Helvetica',
-        color='#333'
-    )
+admission_location_chart = admission_location_chart.encode(
+    x=alt.X("Patient Count:Q", title="Patients"),
+    y=alt.Y('admission_location:N', title='Admission Location',sort='-x',axis=alt.Axis(labelLimit=200))
+)
 
-    return chart
+discharge_location_chart = discharge_location_chart.encode(
+    x=alt.X("Patient Count:Q", title="Patients"),
+    y=alt.Y('discharge_location:N', title='Discharge Location',sort='-x',axis=alt.Axis(labelLimit=200))
+)
 
-# Function to create a pie chart with color coding
-def create_pie_chart(group_column, title):
-    group_counts = df[group_column].value_counts().reset_index()
-    group_counts.columns = [group_column, "Count"]
+hospital_chart = hospital_chart.encode(
+    x=alt.X("Patient Count:Q", title="Patients"),
+    y=alt.Y('Hospital:N', title='Hospital',sort='-x',axis=alt.Axis(labelLimit=200))
+)
 
-    chart = alt.Chart(group_counts).mark_arc(innerRadius=50).encode(
-        theta=alt.Theta(field="Count", type="quantitative"),
-        color=alt.Color(
-            f"{group_column}:N",
-            scale=alt.Scale(domain=["Female", "Male"], range=["#FF69B4", "#1E90FF"]),
-            legend=alt.Legend(title=title)
-        ),
-        tooltip=[f"{group_column}:N", "Count:Q"]
-    ).properties(
-        width=350,
-        height=350,
-        title=f"🍰 Patients by {title}"
-    ).configure_title(
-        fontSize=18,
-        anchor='middle',
-        font='Helvetica',
-        color='#333'
-    )
+# separate columns
 
-    return chart
-
-# Define custom bins
-age_bins = list(range(0, 101, 10))      # 0–9, 10–19, ..., 90–99
-los_bins = list(range(0, 51, 5))        # 0–4, 5–9, ..., 45–49
-cci_bins = list(range(0, 21, 2))        # 0–1, 2–3, ..., 18–19
-lace_bins = list(range(0, 21, 2))       # 0–1, 2–3, ..., 18–19
-
-# Create the charts
-age_chart = create_bar_chart('age', 'Age', bin=True, custom_bins=age_bins)
-gender_chart = create_pie_chart('gender', 'Gender')
-race_chart = create_bar_chart('race', 'Race')
-admission_type_chart = create_bar_chart('admission_type', 'Admission Type')
-admission_location_chart = create_bar_chart('admission_location', 'Admission Location')
-discharge_location_chart = create_bar_chart('discharge_location', 'Discharge Location')
-length_of_stay_chart = create_bar_chart('length_of_stay', 'Length of Stay', bin=True, custom_bins=los_bins)
-cci_score_chart = create_bar_chart('cci_score', 'CCI Score', bin=True, custom_bins=cci_bins)
-lace_score_chart = create_bar_chart('lace_score', 'LACE Score', bin=True, custom_bins=lace_bins)
-hospital_chart = create_bar_chart('Hospital', 'Hospital')
-
-# Display charts in sections
-st.markdown("### 🧬 Demographics")
 col1, col2 = st.columns(2)
-col1.altair_chart(age_chart, use_container_width=True)
-col2.altair_chart(gender_chart, use_container_width=True)
+with col1:
+    st.markdown("### Admissions and Locations")
+    st.altair_chart(admission_type_chart, use_container_width=True)
+    st.altair_chart(admission_location_chart, use_container_width=True)
+    st.altair_chart(discharge_location_chart, use_container_width=True)
+    st.altair_chart(hospital_chart, use_container_width=True)
 
-st.altair_chart(race_chart, use_container_width=True)
+with col2:
+    st.markdown("### Demographics")
+    st.altair_chart(age_histogram, use_container_width=True)
+    st.altair_chart(gender_chart, use_container_width=True)
+    st.altair_chart(race_pie_chart, use_container_width=True)
 
-st.markdown("### 🏥 Admissions and Locations")
-col3, col4 = st.columns(2)
-col3.altair_chart(admission_type_chart, use_container_width=True)
-col4.altair_chart(admission_location_chart, use_container_width=True)
-
-st.altair_chart(discharge_location_chart, use_container_width=True)
-
-st.markdown("### 📈 Scores and Stay")
-col5, col6 = st.columns(2)
-col5.altair_chart(length_of_stay_chart, use_container_width=True)
-col6.altair_chart(cci_score_chart, use_container_width=True)
-
-st.altair_chart(lace_score_chart, use_container_width=True)
-st.altair_chart(hospital_chart, use_container_width=True)
+    st.markdown("### Additional Metrics")
+    st.altair_chart(length_of_stay_chart, use_container_width=True)
+    st.altair_chart(cci_score_chart, use_container_width=True)
+    st.altair_chart(lace_score_chart, use_container_width=True)
