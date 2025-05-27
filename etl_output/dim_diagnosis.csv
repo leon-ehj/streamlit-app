@@ -1,0 +1,24 @@
+icd_code,icd_version,diagnosis_description,diagnosis_key
+I5023,10,Acute on chronic systolic (congestive) heart failure,1
+I5031,10,Acute diastolic (congestive) heart failure,2
+I5032,10,Chronic diastolic (congestive) heart failure,3
+I5033,10,Acute on chronic diastolic (congestive) heart failure,4
+I5020,10,Unspecified systolic (congestive) heart failure,5
+I5021,10,Acute systolic (congestive) heart failure,6
+I5022,10,Chronic systolic (congestive) heart failure,7
+I509,10,"Heart failure, unspecified",8
+I5030,10,Unspecified diastolic (congestive) heart failure,9
+I5043,10,Acute on chronic combined systolic (congestive) and diastolic (congestive) heart failure,10
+I5082,10,Biventricular heart failure,11
+I50813,10,Acute on chronic right heart failure,12
+I5041,10,Acute combined systolic (congestive) and diastolic (congestive) heart failure,13
+I50810,10,"Right heart failure, unspecified",14
+I50811,10,Acute right heart failure,15
+I5084,10,End stage heart failure,16
+I501,10,"Left ventricular failure, unspecified",17
+I50812,10,Chronic right heart failure,18
+I5042,10,Chronic combined systolic (congestive) and diastolic (congestive) heart failure,19
+I5089,10,Other heart failure,20
+I5040,10,Unspecified combined systolic (congestive) and diastolic (congestive) heart failure,21
+I50814,10,Right heart failure due to left heart failure,22
+I5083,10,High output heart failure,23
