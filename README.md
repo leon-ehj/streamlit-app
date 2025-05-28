@@ -17,14 +17,16 @@ Ensure the ETL output CSV files are saved inside the `etl_output` folder.
 
 How to Run the Application
 
-1. Open a terminal or command prompt.
+1. Run the ETL.py file to create dimension/fact tables if not already present.
 
-2. Navigate to the project root directory containing `app.py` and the `etl_output` folder.
+3. Open a terminal or command prompt.
 
-3. Run the Streamlit app using the command:
+4. Navigate to the project root directory containing `app.py` and the `etl_output` folder.
+
+5. Run the Streamlit app using the command:
 
 ```bash
-streamlit run app.py
+streamlit run Home.py
 ```
 
 4. Your default web browser should open automatically with the dashboard. If not, open the URL shown in the terminal (usually [http://localhost:8501](http://localhost:8501)).
